@@ -1,20 +1,18 @@
-# Portfolio: static site served by Caddy on the OjasYukti VPS.
-# Append to /etc/caddy/Caddyfile, then: sudo systemctl reload caddy
 
+# ---- Portfolio: static files in /var/www/portfolio (owned by ojdeploy) ----
 sandeep.ojasyukti.tech {
 	root * /var/www/portfolio
 	encode zstd gzip
-
-	# Never serve repo internals.
-	@hidden path /.git/* /.github/* /deploy/* /README.md /.gitignore
-	respond @hidden 404
-
 	file_server
 
 	handle_errors {
-		@404 expression {err.status_code} == 404
-		rewrite @404 /404.html
-		file_server
+		@notfound expression {err.status_code} == 404
+		handle @notfound {
+			root * /var/www/portfolio
+			rewrite * /404.html
+			file_server
+		}
+		respond "{err.status_code} {err.status_text}" {err.status_code}
 	}
 
 	header {
