@@ -1,0 +1,32 @@
+# Portfolio: static site served by Caddy on the OjasYukti VPS.
+# Append to /etc/caddy/Caddyfile, then: sudo systemctl reload caddy
+
+sandeep.ojasyukti.tech {
+	root * /var/www/portfolio
+	encode zstd gzip
+
+	# Never serve repo internals.
+	@hidden path /.git/* /.github/* /deploy/* /README.md /.gitignore
+	respond @hidden 404
+
+	file_server
+
+	handle_errors {
+		@404 expression {err.status_code} == 404
+		rewrite @404 /404.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	# Images and icons rarely change; HTML always revalidates.
+	@static path /assets/*.webp /assets/*.jpg /assets/*.png /favicon.svg
+	header @static Cache-Control "public, max-age=2592000"
+	@html path / /index.html
+	header @html Cache-Control "no-cache"
+}
